@@ -1,33 +1,100 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Retro Dungeon Palette */
+  --bg-void: #1a120b;
+  /* Deep brown/black */
+  --bg-card: #2a1d13;
+  /* Leather/Wood tone */
+  --bg-panel: #3c2a1e;
+  /* Lighter wood */
+
+  --primary: #cf3838;
+  /* Blood Red */
+  --primary-glow: rgba(207, 56, 56, 0.4);
+
+  --accent: #ffb84d;
+  /* Gold Coin */
+  --accent-glow: rgba(255, 184, 77, 0.3);
+
+  --text-primary: #e5dcc5;
+  /* Parchment White */
+  --text-secondary: #d6c8b5;
+  /* Lighter Parchment */
+  --text-muted: #a39281;
+  /* Stone / Clay */
+
+  --border-subtle: #594031;
+  --border-highlight: #8c6e56;
+
+  /* Status Colors (Retro) */
+  --status-todo: #a89f91;
+  --status-active: #4da6ff;
+  /* Mana Blue */
+  --status-done: #5cd65c;
+  /* Potion Green */
+
+  /* Spacing */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 1rem;
+  --space-4: 1.5rem;
+  --space-5: 2rem;
+
+  /* Radius - Sharp for pixel feel */
+  --radius-sm: 2px;
+  --radius-md: 4px;
+  --radius-lg: 4px;
+
+  /* Typography */
+  --font-heading: var(--font-fantasy-header);
+  --font-body: var(--font-fantasy);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
-html,
-body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* Scanline Effect */
+.scanlines::before {
+  content: " ";
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  right: 0;
+  background: linear-gradient(to bottom,
+      rgba(18, 16, 16, 0) 50%,
+      rgba(0, 0, 0, 0.25) 50%);
+  background-size: 100% 4px;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.15;
 }
 
 * {
   box-sizing: border-box;
-  padding: 0;
+}
+
+body {
+  background-color: var(--bg-void);
+  color: var(--text-primary);
+  /* font-family handled by layout.tsx className */
   margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  font-size: 22px;
+  /* Bigger base size */
+  line-height: 1.6;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-heading);
+  margin: 0 0 var(--space-3) 0;
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 a {
@@ -35,8 +102,56 @@ a {
   text-decoration: none;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
-  }
+/* Utility / Components Base */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: var(--space-4);
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-2) var(--space-4);
+  background: var(--bg-panel);
+  border: 1px solid var(--border-subtle);
+  color: var(--text-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.btn:hover {
+  border-color: var(--text-secondary);
+  background: var(--bg-card);
+  box-shadow: inset 0 0 0 2px var(--border-highlight);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  box-shadow:
+    inset 2px 2px 0px rgba(255, 255, 255, 0.1),
+    inset -2px -2px 0px rgba(0, 0, 0, 0.3),
+    0 4px 6px rgba(0, 0, 0, 0.5);
+  border: 2px solid var(--border-subtle);
+}
+
+.btn-primary:hover {
+  background: #ff6666;
+  box-shadow: 0 0 15px var(--primary-glow);
+}
+
+.card {
+  background: var(--bg-card);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  padding: var(--space-4);
+  box-shadow:
+    4px 4px 0px rgba(0, 0, 0, 0.4),
+    inset 1px 1px 0px rgba(255, 255, 255, 0.05);
 }
