@@ -68,7 +68,7 @@ export async function toggleQuestStatus(questId: string, currentStatus: string) 
                 .set({
                     xpCurrent: xpCurrent,
                     xpLevel: xpLevel,
-                    bossHpCurrent: sql`MAX(0, ${seasons.bossHpCurrent} - ${damage})`
+                    bossHpCurrent: sql`GREATEST(0, ${seasons.bossHpCurrent} - ${damage})`
                 })
                 .where(eq(seasons.id, season.id));
 
@@ -129,8 +129,8 @@ export async function toggleQuestStatus(questId: string, currentStatus: string) 
             // Revert XP & Heal Boss (Undo)
             await db.update(seasons)
                 .set({
-                    xpCurrent: sql`MAX(0, ${seasons.xpCurrent} - ${xpAmount})`,
-                    bossHpCurrent: sql`MIN(${season.bossHpMax}, ${seasons.bossHpCurrent} + ${damage})`,
+                    xpCurrent: sql`GREATEST(0, ${seasons.xpCurrent} - ${xpAmount})`,
+                    bossHpCurrent: sql`LEAST(${season.bossHpMax}, ${seasons.bossHpCurrent} + ${damage})`,
                 })
                 .where(eq(seasons.id, season.id));
         }
