@@ -85,7 +85,7 @@ export async function getDashboardData() {
         seasonQuestlines = questlinesWithStats as any;
     }
 
-    const latestRecap = await getLatestRecap();
+    const latestRecap = activeSeason ? await getLatestRecap(activeSeason.id) : null;
 
     return {
         user,
