@@ -16,12 +16,16 @@ export type RecapData = {
     generatedAt: string;
 };
 
-export async function getLatestRecap() {
-    // Switched from db.query to db.select for stability
+export async function getLatestRecap(seasonId: string) {
     const recentArtifacts = await db
         .select()
         .from(aiArtifacts)
-        .where(eq(aiArtifacts.type, "weekly_recap"))
+        .where(
+            and(
+                eq(aiArtifacts.type, "weekly_recap"),
+                eq(aiArtifacts.seasonId, seasonId)
+            )
+        )
         .orderBy(desc(aiArtifacts.createdAt))
         .limit(1);
 
@@ -29,24 +33,32 @@ export async function getLatestRecap() {
 
     if (!latest) return null;
 
-    return {
-        ...latest,
-        data: JSON.parse(latest.outputText) as RecapData
-    };
+    try {
+        return {
+            ...latest,
+            data: JSON.parse(latest.outputText) as RecapData
+        };
+    } catch (e) {
+        console.error("Failed to parse recap artifact", e);
+        return null;
+    }
 }
 
 import { hasApiKey, generateJSON } from "@/lib/ai";
 
-export async function generateRecap() {
+export async function generateRecap(seasonId: string) {
     // 1. Get Context (Active Season)
     const activeSeasons = await db
         .select()
         .from(seasons)
-        .where(eq(seasons.status, "active"))
+        .where(and(eq(seasons.id, seasonId), eq(seasons.status, "active")))
         .limit(1);
 
     const activeSeason = activeSeasons[0];
-    if (!activeSeason) throw new Error("No active season found");
+    if (!activeSeason) {
+        console.error(`generateRecap: Season ${seasonId} not found or not active.`);
+        return null; // Don't throw, just return null to avoid crashing
+    }
 
     // Get REAL Stats Context
     const sevenDaysAgo = new Date();
@@ -110,7 +122,7 @@ export async function generateRecap() {
     }
 
     // 3. Fallback to Mock
-    await new Promise(resolve => setTimeout(resolve, 3000)); // Simulate thinking
+    // await new Promise(resolve => setTimeout(resolve, 3000)); // Remove delay to be snappier
 
     const mockData: RecapData = {
         episodeTitle: `The ${activeSeason.bossType} Incursion`,
@@ -134,14 +146,14 @@ export async function generateRecap() {
 }
 
 export async function syncRecap(seasonId: string) {
-    const latest = await getLatestRecap();
+    const latest = await getLatestRecap(seasonId);
 
     // If no recap exists or if the latest one is older than 1 hour, regenerate fully
     const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
     const shouldFullRegen = !latest || new Date(latest.createdAt!) < oneHourAgo;
 
     if (shouldFullRegen) {
-        await generateRecap();
+        await generateRecap(seasonId);
     } else {
         // Just update the stats to keep it "strictly in line" with activity
         // without burning AI credits/wait time for every minor click

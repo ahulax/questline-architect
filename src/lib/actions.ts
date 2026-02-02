@@ -111,8 +111,12 @@ export async function toggleQuestStatus(questId: string, currentStatus: string) 
             });
         }
 
-        // Trigger Recap Sync (keep it in line with activity)
-        await syncRecap(quest.seasonId);
+        // Trigger Recap Sync (Safe)
+        try {
+            await syncRecap(quest.seasonId);
+        } catch (error) {
+            console.error("Failed to sync recap (non-blocking):", error);
+        }
 
     } else {
         // ... (Undo logic can stay simple or also decrement logs if strict correctness needed)
