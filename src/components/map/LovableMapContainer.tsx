@@ -22,18 +22,36 @@ const LovableMapContainer: React.FC<LovableMapContainerProps> = ({
     paths,
     seasonId,
 }) => {
+    const [hoveredNodeId, setHoveredNodeId] = useState<string | null>(null);
+
     const handleNodeClick = useCallback((nodeId: string) => {
         const node = nodes.find(n => n.id === nodeId);
         if (node) {
+            // 1. Show Toast
             toast.message(node.title, {
                 description: node.description || "No description provided",
-                action: {
-                    label: "View",
-                    onClick: () => console.log("Navigate to quest", node.id)
-                }
             });
+
+            // 2. Scroll to Quest Card
+            const element = document.getElementById(`quest-card-${nodeId}`);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                // Add highlight effect
+                element.classList.add('ring-2', 'ring-primary', 'ring-offset-2');
+                setTimeout(() => {
+                    element.classList.remove('ring-2', 'ring-primary', 'ring-offset-2');
+                }, 2000);
+            } else {
+                console.warn(`Quest card element not found: quest-card-${nodeId}`);
+            }
         }
     }, [nodes]);
+
+    const handleNodeHover = useCallback((nodeId: string | null) => {
+        setHoveredNodeId(nodeId);
+    }, []);
+
+    const hoveredNode = nodes.find(n => n.id === hoveredNodeId);
 
     return (
         <div className="relative w-full h-full overflow-hidden bg-[#1a1a2e] rounded-lg border border-white/10 shadow-inner">
@@ -42,7 +60,26 @@ const LovableMapContainer: React.FC<LovableMapContainerProps> = ({
                 paths={paths}
                 currentSeasonId={seasonId}
                 onNodeClick={handleNodeClick}
+                onNodeHover={handleNodeHover}
             />
+
+            {/* Hover Tooltip */}
+            {hoveredNode && (
+                <div className="absolute top-4 right-4 p-4 bg-black/80 backdrop-blur-md rounded-lg border border-white/20 shadow-xl max-w-xs pointer-events-none select-none z-50 animate-in fade-in slide-in-from-top-2">
+                    <h3 className="text-white font-bold text-sm mb-1">{hoveredNode.title}</h3>
+                    <div className="flex items-center gap-2 text-xs">
+                        <span className={`px-1.5 py-0.5 rounded font-mono uppercase ${hoveredNode.status === 'done' ? 'bg-green-900/50 text-green-400 border border-green-700/50' :
+                            hoveredNode.status === 'in_progress' ? 'bg-yellow-900/50 text-yellow-400 border border-yellow-700/50' :
+                                'bg-gray-800 text-gray-400 border border-gray-700'
+                            }`}>
+                            {hoveredNode.status.replace('_', ' ')}
+                        </span>
+                        {hoveredNode.type !== 'town' && (
+                            <span className="text-gray-500 capitalize">• {hoveredNode.type.replace('_', ' ')}</span>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* UI Overlay */}
             <div className="absolute top-4 left-4 p-4 bg-black/60 backdrop-blur-md rounded-lg border border-white/10 shadow-lg max-w-xs pointer-events-none select-none">

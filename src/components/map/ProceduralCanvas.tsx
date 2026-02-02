@@ -15,6 +15,7 @@ const ProceduralCanvas: React.FC<SeasonMapProps> = ({
     paths,
     currentSeasonId,
     onNodeClick,
+    onNodeHover,
 }) => {
     const containerRef = useRef<HTMLDivElement>(null);
     const appRef = useRef<Application | null>(null);
@@ -150,7 +151,7 @@ const ProceduralCanvas: React.FC<SeasonMapProps> = ({
         layerManagerRef.current.renderPaths(paths, nodes);
 
         // Render nodes
-        layerManagerRef.current.renderNodes(nodes, onNodeClick);
+        layerManagerRef.current.renderNodes(nodes, onNodeClick, onNodeHover);
     }, [nodes, paths, onNodeClick, isInitialized]);
 
     /**

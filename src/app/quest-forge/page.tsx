@@ -4,6 +4,8 @@ import { seasons, quests, questlines } from "@/db/schema";
 import { eq, and, sql } from "drizzle-orm";
 import { QuestForgeMain } from "@/components/quest-forge/quest-forge-main";
 
+export const dynamic = "force-dynamic";
+
 export default async function QuestForgePage() {
     const session = await auth();
     if (!session || !session.user?.id) return <div>Please login</div>;

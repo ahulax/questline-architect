@@ -75,13 +75,47 @@ export function mapSeasonDataToMap(seasonQuestlines: QuestlineWithQuests[]): Map
             if (globalY > 1000) globalY -= 200;
             if (globalY < -1000) globalY += 200;
 
+            // Discovery Logic
+            // A node is discovered if:
+            // 1. It is completed or in progress
+            // 2. It is the very first quest
+            // 3. The previous quest in the line is completed
+            let isDiscovered = false;
+
+            if (quest.status === 'done' || quest.status === 'in_progress') {
+                isDiscovered = true;
+            } else if (qIndex === 0 && qlIndex === 0) {
+                // First quest of first questline is always discovered
+                isDiscovered = true;
+            } else if (qIndex === 0) {
+                // First quest of subsequent questlines:
+                // Discovered if the previous questline is fully done? 
+                // OR: for now, let's say discovered if previous questline is at least started?
+                // Let's keep it simple: Start of every questline is discovered for now, or check previous questline status.
+                // Assuming sequential questlines:
+                const prevQl = sortedQuestlines[qlIndex - 1];
+                if (prevQl && prevQl.quests.every(q => q.status === 'done')) {
+                    isDiscovered = true;
+                } else {
+                    // If we allow parallel questlines, maybe always visible? 
+                    // Let's default to visible if it's the start of a track, so users can switch tracks.
+                    isDiscovered = true;
+                }
+            } else {
+                // Check previous quest in this line
+                const prevQuest = sortedQuests[qIndex - 1];
+                if (prevQuest && prevQuest.status === 'done') {
+                    isDiscovered = true;
+                }
+            }
+
             const node: MapNode = {
                 id: quest.id,
                 x: globalX,
                 y: globalY,
                 type,
                 biome,
-                isDiscovered: true, // Always visible for now
+                isDiscovered,
                 title: quest.title,
                 description: quest.description || undefined,
                 status: quest.status as 'todo' | 'in_progress' | 'done' | 'dropped',

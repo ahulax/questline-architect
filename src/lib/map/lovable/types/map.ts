@@ -30,6 +30,7 @@ export interface SeasonMapProps {
   paths: QuestPath[];
   currentSeasonId: string;
   onNodeClick: (nodeId: string) => void;
+  onNodeHover?: (nodeId: string | null) => void;
 }
 
 // Internal types for chunk management

@@ -311,7 +311,7 @@ export class LayerManager {
   /**
    * Render quest nodes/POIs
    */
-  renderNodes(nodes: MapNode[], onNodeClick: (nodeId: string) => void): void {
+  renderNodes(nodes: MapNode[], onNodeClick: (nodeId: string) => void, onNodeHover?: (nodeId: string | null) => void): void {
     // Clear existing nodes
     this.nodeLayer.removeChildren();
 
@@ -365,9 +365,11 @@ export class LayerManager {
       // Hover effect
       nodeContainer.on('pointerover', () => {
         nodeContainer.scale.set(1.1);
+        onNodeHover?.(node.id);
       });
       nodeContainer.on('pointerout', () => {
         nodeContainer.scale.set(1);
+        onNodeHover?.(null);
       });
 
       this.nodeLayer.addChild(nodeContainer);
