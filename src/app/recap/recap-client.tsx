@@ -5,6 +5,7 @@ import { generateRecap, type RecapData } from "@/lib/recap-actions";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Loader2, Clapperboard, Sparkles, Trophy, Skull, Sword } from "lucide-react";
+import { toast } from "sonner";
 
 interface RecapClientProps {
     seasonId: string;
@@ -17,8 +18,17 @@ export function RecapClient({ seasonId, initialData }: RecapClientProps) {
 
     const handleGenerate = () => {
         startTransition(async () => {
-            const newData = await generateRecap(seasonId);
-            setData(newData);
+            try {
+                const newData = await generateRecap(seasonId);
+                if (!newData) {
+                    toast.error("Failed to generate recap. Please try again.");
+                    console.error("Recap generation returned null");
+                } else {
+                    setData(newData);
+                }
+            } catch (error) {
+                toast.error("An unexpected error occurred.");
+            }
         });
     };
 
