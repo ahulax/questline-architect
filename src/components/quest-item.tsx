@@ -72,15 +72,23 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                 addXp(xp);
                 if (quest.type === 'main') damageBoss(damage);
             }
-            await toggleQuestStatus(quest.id, quest.status);
 
-            // Trigger Global Post-Completion Flow
-            if (quest.status !== "done") {
-                if (quest.effort === 'L') {
-                    triggerVictory(quest);
-                } else {
-                    triggerReview(quest);
+            try {
+                await toggleQuestStatus(quest.id, quest.status);
+
+                // Trigger Global Post-Completion Flow
+                if (quest.status !== "done") {
+                    if (quest.effort === 'L') {
+                        triggerVictory(quest);
+                    } else {
+                        triggerReview(quest);
+                    }
                 }
+            } catch (error) {
+                console.error("Quest toggle failed:", error);
+                // Revert optimistic updates if needed, but for now just alert
+                // toast.error("Failed to update quest. Please try again.");
+                // Better to just fail silently-ish than crash app.
             }
         });
     };
