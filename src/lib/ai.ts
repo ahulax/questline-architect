@@ -7,7 +7,7 @@ if (apiKey) {
     genAI = new GoogleGenerativeAI(apiKey);
 }
 
-export const aiModel = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-flash" }) : null;
+export const aiModel = genAI ? genAI.getGenerativeModel({ model: "gemini-1.5-flash-latest" }) : null;
 
 export const hasApiKey = !!apiKey;
 
