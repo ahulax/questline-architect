@@ -41,7 +41,7 @@ export async function getDashboardData() {
             .select()
             .from(quests)
             .where(eq(quests.seasonId, activeSeason.id))
-            .orderBy(quests.orderIndex);
+            .orderBy(quests.orderIndex, quests.createdAt);
 
         const allIncompleteQuests = allSeasonQuests.filter(q => ["todo", "in_progress"].includes(q.status));
 

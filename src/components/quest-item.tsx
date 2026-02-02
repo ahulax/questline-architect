@@ -135,6 +135,15 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                 }
 
                 // Force a router refresh to ensure list is updated
+                // Force a router refresh to ensure list is updated
+
+                // Strategy: Double Refresh
+                // 1. Fast Refresh (500ms): Catches fast updates
+                await new Promise(resolve => setTimeout(resolve, 500));
+                router.refresh();
+
+                // 2. Safety Refresh (2000ms): Catches read-replica lag
+                await new Promise(resolve => setTimeout(resolve, 1500));
                 router.refresh();
             } catch (error) {
                 console.error("Quest toggle failed:", error);
