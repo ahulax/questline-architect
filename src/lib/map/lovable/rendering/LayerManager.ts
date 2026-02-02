@@ -327,8 +327,11 @@ export class LayerManager {
       const biome = getBiomeAt(node.x, node.y);
       const biomeDef = getBiomeDefinition(biome);
 
-      // Node styling based on type and discovery status
-      const baseSize = 20;
+      // Node styling based on type and importance
+      // L = 30, M = 20, S = 15
+      let baseSize = 20;
+      if (node.type === 'fortress') baseSize = 30; // Large for L quests
+      if (node.type === 'ruins' || node.type === 'stone_circle') baseSize = 15; // Small for S quests
       const discovered = node.isDiscovered;
 
       // Base circle and Color Selection
@@ -411,60 +414,62 @@ export class LayerManager {
   private drawNodeIcon(graphics: Graphics, type: MapNode['type'], size: number, isCompleted: boolean = false): void {
     const iconColor = isCompleted ? 0xffffff : 0xaaaaaa; // Bright white for completed, grey for foundation
 
-    switch (type) {
       case 'town':
-        // House icon
-        graphics.poly([0, -size, -size * 0.7, 0, size * 0.7, 0]).fill(iconColor);
-        graphics.rect(-size * 0.4, 0, size * 0.8, size * 0.6).fill(iconColor);
-        break;
+    // House icon
+    graphics.poly([0, -size, -size * 0.7, 0, size * 0.7, 0]).fill(iconColor);
+    graphics.rect(-size * 0.4, 0, size * 0.8, size * 0.6).fill(iconColor);
+    break;
 
       case 'ruins':
-        // Broken pillars
-        graphics.rect(-size * 0.5, -size * 0.3, size * 0.3, size * 0.8).fill(iconColor);
-        graphics.rect(size * 0.2, -size * 0.5, size * 0.3, size).fill(iconColor);
-        break;
+    // Broken pillars (Small camp)
+    graphics.rect(-size * 0.5, -size * 0.3, size * 0.3, size * 0.8).fill(iconColor);
+    graphics.rect(size * 0.2, -size * 0.5, size * 0.3, size).fill(iconColor);
+    break;
 
       case 'fortress':
-        // Tower with crenellations
-        graphics.rect(-size * 0.4, -size * 0.2, size * 0.8, size * 0.8).fill(iconColor);
-        graphics.rect(-size * 0.5, -size * 0.6, size * 0.3, size * 0.4).fill(iconColor);
-        graphics.rect(size * 0.2, -size * 0.6, size * 0.3, size * 0.4).fill(iconColor);
-        break;
+    // Tower with crenellations (Grand Castle/Dungeon)
+    graphics.rect(-size * 0.6, -size * 0.4, size * 1.2, size * 1.0).fill(iconColor); // Main keep
+    graphics.rect(-size * 0.8, -size * 0.4, size * 0.4, size * 1.2).fill(iconColor); // Left tower
+    graphics.rect(size * 0.4, -size * 0.4, size * 0.4, size * 1.2).fill(iconColor); // Right tower
+    // Roofs
+    graphics.poly([-size * 0.8, -size * 0.6, -size * 0.6, -size * 0.4, -size * 0.4, -size * 0.6]).fill(iconColor);
+    graphics.poly([size * 0.4, -size * 0.6, size * 0.6, -size * 0.4, size * 0.8, -size * 0.6]).fill(iconColor);
+    break;
 
+      case 'stone_circle': // Using as 'Camp' or generic small point
       case 'portal':
-        // Swirl
-        graphics.arc(0, 0, size * 0.6, 0, Math.PI * 1.5);
-        graphics.stroke({ color: iconColor, width: 3 });
-        graphics.circle(size * 0.3, -size * 0.3, 3).fill(iconColor);
-        break;
-    }
+    // Swirl / Camp fire
+    graphics.circle(0, 0, size * 0.5).stroke({ color: iconColor, width: 2 });
+    graphics.poly([-size * 0.3, size * 0.3, 0, -size * 0.4, size * 0.3, size * 0.3]).fill(iconColor);
+    break;
+  }
+}
+
+/**
+ * Clear all layers
+ */
+clear(): void {
+  this.terrainLayer.removeChildren();
+  this.fogLayer.removeChildren();
+  this.pathLayer.removeChildren();
+  this.nodeLayer.removeChildren();
+  this.uiLayer.removeChildren();
+  this.activeChunkRefs.clear();
+  this.chunkRenderer.clearCache();
+
+  // Clear fog graphics
+  for(const fog of this.fogGraphics.values()) {
+  fog.destroy();
+}
+this.fogGraphics.clear();
   }
 
-  /**
-   * Clear all layers
-   */
-  clear(): void {
-    this.terrainLayer.removeChildren();
-    this.fogLayer.removeChildren();
-    this.pathLayer.removeChildren();
-    this.nodeLayer.removeChildren();
-    this.uiLayer.removeChildren();
-    this.activeChunkRefs.clear();
-    this.chunkRenderer.clearCache();
-
-    // Clear fog graphics
-    for (const fog of this.fogGraphics.values()) {
-      fog.destroy();
-    }
-    this.fogGraphics.clear();
-  }
-
-  /**
-   * Destroy and cleanup
-   */
-  destroy(): void {
-    this.clear();
-    this.chunkRenderer.clearCache();
-    this.worldContainer.destroy({ children: true });
-  }
+/**
+ * Destroy and cleanup
+ */
+destroy(): void {
+  this.clear();
+  this.chunkRenderer.clearCache();
+  this.worldContainer.destroy({ children: true });
+}
 }

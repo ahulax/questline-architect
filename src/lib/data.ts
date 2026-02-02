@@ -96,7 +96,10 @@ export async function getDashboardData() {
     };
 }
 
+import { unstable_noStore as noStore } from "next/cache";
+
 export async function getSeasonMapData() {
+    noStore(); // Force fresh data for map status
     const { user, activeSeason } = await getDashboardData() || {};
     if (!activeSeason) return null;
 

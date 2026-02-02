@@ -47,17 +47,18 @@ export function mapSeasonDataToMap(seasonQuestlines: QuestlineWithQuests[]): Map
         const sortedQuests = [...ql.quests].sort((a, b) => (a.orderIndex || 0) - (b.orderIndex || 0));
 
         sortedQuests.forEach((quest, qIndex) => {
-            // Determine node type based on tier or importance
-            // For V1, let's make the last quest of a questline a 'fortress' or 'tower', others 'village' or 'ruins'
-            const isLastInLine = qIndex === sortedQuests.length - 1;
-            let type: NodeType = 'town';
+            // Determine node type based on quest effort (S, M, L)
+            // S = Camp/Ruins (Small)
+            // M = Town/Tower (Medium)
+            // L = Fortress/Portal (Large)
+            let type: NodeType = 'ruins';
 
-            if (isLastInLine) {
+            if (quest.effort === 'L') {
                 type = 'fortress';
-            } else if (qIndex === 0) {
+            } else if (quest.effort === 'M') {
                 type = 'town';
             } else {
-                // Randomize slightly based on seed
+                // S - Randomize between small structures
                 const r = seededRandom(quest.id.charCodeAt(0));
                 type = r > 0.5 ? 'ruins' : 'stone_circle';
             }
