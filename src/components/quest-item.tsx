@@ -27,11 +27,13 @@ interface QuestProps {
         flavorData: string | null;
     };
     allQuests?: any[];
+
     depth?: number;
     showCombat?: boolean;
+    hideOnComplete?: boolean;
 }
 
-export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false }: QuestProps) {
+export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false, hideOnComplete = false }: QuestProps) {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isDetailOpen, setIsDetailOpen] = useState(false);
@@ -135,6 +137,8 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
 
     const displayEnemy = flavor.enemyType || `${quest.title.split(' ')[0]} ${quest.type === 'main' ? 'Wraith' : 'Mimic'}`;
 
+    // Force hide if requested and done
+    if (hideOnComplete && isDone) return null;
     if (!isVisible) return null;
 
     return (

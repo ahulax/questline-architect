@@ -122,7 +122,7 @@ export default async function Home() {
                         </div>
                         <div className="space-y-3">
                           {group.quests.map((q) => (
-                            <QuestItem key={q.id} quest={q} showCombat={true} />
+                            <QuestItem key={q.id} quest={q} showCombat={true} hideOnComplete={true} />
                           ))}
                         </div>
                       </div>
@@ -140,7 +140,7 @@ export default async function Home() {
                       </div>
                       <div className="space-y-3">
                         {standaloneQuests.map((q) => (
-                          <QuestItem key={q.id} quest={q} showCombat={true} />
+                          <QuestItem key={q.id} quest={q} showCombat={true} hideOnComplete={true} />
                         ))}
                       </div>
                     </div>
