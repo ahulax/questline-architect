@@ -15,7 +15,16 @@ export default async function Home() {
 
   if (!data?.user) {
     // Should be handled by middleware, but fallback if not
-    return <div className="p-8">Please login.</div>;
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <p className="mb-4">Please login to continue.</p>
+          <a href="/login" className="px-4 py-2 bg-primary text-white rounded hover:bg-primary/90">
+            Go to Login
+          </a>
+        </div>
+      </div>
+    );
   }
 
   const { activeSeason, quests, questlines: seasonQuestlines } = data;

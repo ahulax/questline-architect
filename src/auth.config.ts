@@ -11,7 +11,7 @@ export const authConfig = {
             const isOnProtected = nextUrl.pathname.startsWith("/season") || nextUrl.pathname.startsWith("/inventory") || nextUrl.pathname.startsWith("/recap");
             const isOnLogin = nextUrl.pathname === "/login";
 
-            if (isOnProtected) {
+            if (isOnProtected || isOnDashboard) {
                 if (isLoggedIn) return true;
                 return false; // Redirect unauthenticated users to login
             }
