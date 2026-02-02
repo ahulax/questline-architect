@@ -41,7 +41,7 @@ export default async function SeasonMap() {
 
             {/* The Infinite Map Canvas */}
             <div className="flex-1 w-full relative">
-                <SeasonMapWrapper seasonId={activeSeason.id} />
+                <SeasonMapWrapper seasonId={activeSeason.id} mapData={data.mapData} />
             </div>
         </div>
     );
