@@ -47,22 +47,30 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
     const handleToggle = () => {
         startTransition(async () => {
             if (quest.status !== "done") {
-                const xpMap = { S: 5, M: 10, L: 20 };
-                const damageMap = { S: 5, M: 15, L: 25 };
+                const xpMap: Record<string, number> = { S: 5, M: 10, L: 20 };
+                const damageMap: Record<string, number> = { S: 5, M: 15, L: 25 };
 
-                const rect = document.getElementById(`quest-card-${quest.id}`)?.getBoundingClientRect();
-                const x = rect ? (rect.left + rect.width / 2) / window.innerWidth : 0.5;
-                const y = rect ? (rect.top + rect.height / 2) / window.innerHeight : 0.5;
+                const effortKey = quest.effort || 'S';
+                const xp = xpMap[effortKey] || 5;
+                const damage = damageMap[effortKey] || 5;
 
-                confetti({
-                    particleCount: 60,
-                    spread: 70,
-                    origin: { x, y },
-                    colors: ['#4ade80', '#ffffff', '#fbbf24']
-                });
+                try {
+                    const rect = document.getElementById(`quest-card-${quest.id}`)?.getBoundingClientRect();
+                    const x = rect ? (rect.left + rect.width / 2) / window.innerWidth : 0.5;
+                    const y = rect ? (rect.top + rect.height / 2) / window.innerHeight : 0.5;
 
-                addXp(xpMap[quest.effort]);
-                if (quest.type === 'main') damageBoss(damageMap[quest.effort]);
+                    confetti({
+                        particleCount: 60,
+                        spread: 70,
+                        origin: { x, y },
+                        colors: ['#4ade80', '#ffffff', '#fbbf24']
+                    });
+                } catch (e) {
+                    console.warn("Confetti failed", e);
+                }
+
+                addXp(xp);
+                if (quest.type === 'main') damageBoss(damage);
             }
             await toggleQuestStatus(quest.id, quest.status);
 

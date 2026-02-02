@@ -38,12 +38,14 @@ export function SeasonProvider({ children }: { children: ReactNode }) {
 
     const addXp = (amount: number) => {
         if (!state) return;
-        setState(prev => prev ? { ...prev, xpCurrent: prev.xpCurrent + amount } : null);
+        const safeAmount = Number.isNaN(amount) ? 0 : amount;
+        setState(prev => prev ? { ...prev, xpCurrent: prev.xpCurrent + safeAmount } : null);
     };
 
     const damageBoss = (amount: number) => {
         if (!state) return;
-        setState(prev => prev ? { ...prev, bossHpCurrent: Math.max(0, prev.bossHpCurrent - amount) } : null);
+        const safeAmount = Number.isNaN(amount) ? 0 : amount;
+        setState(prev => prev ? { ...prev, bossHpCurrent: Math.max(0, prev.bossHpCurrent - safeAmount) } : null);
     };
 
     const undoStats = (xp: number, damage: number) => {
