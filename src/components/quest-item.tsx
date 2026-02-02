@@ -80,6 +80,11 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
     };
 
     const performToggle = (isCompleting: boolean = false) => {
+        // 1. Instant Optimistic Hide (if completing)
+        if (!isDone) {
+            setIsVisible(false);
+        }
+
         startTransition(async () => {
             // Optimistic XP/Damage Logic
             if (!isDone) { // If we are completing it right now
@@ -115,8 +120,7 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                 // If completing, fix the UI
                 if (!isDone) {
 
-                    // Optimistic Hide
-                    setIsVisible(false);
+
 
                     // Trigger Victory ONLY (Review handled by modal input now)
                     if (quest.effort === 'L') {
