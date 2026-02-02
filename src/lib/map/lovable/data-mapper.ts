@@ -82,6 +82,9 @@ export function mapSeasonDataToMap(seasonQuestlines: QuestlineWithQuests[]): Map
                 type,
                 biome,
                 isDiscovered: true, // Always visible for now
+                title: quest.title,
+                description: quest.description || undefined,
+                status: quest.status as 'todo' | 'in_progress' | 'done' | 'dropped',
             };
 
             nodes.push(node);

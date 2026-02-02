@@ -25,10 +25,13 @@ const LovableMapContainer: React.FC<LovableMapContainerProps> = ({
     const handleNodeClick = useCallback((nodeId: string) => {
         const node = nodes.find(n => n.id === nodeId);
         if (node) {
-            toast.info(`Quest Node: ${node.type}`, {
-                description: `${node.biome} biome`,
+            toast.message(node.title, {
+                description: node.description || "No description provided",
+                action: {
+                    label: "View",
+                    onClick: () => console.log("Navigate to quest", node.id)
+                }
             });
-            // Here you could trigger a quest details modal or navigation
         }
     }, [nodes]);
 

@@ -10,6 +10,10 @@ export type MapNode = {
   type: NodeType;
   biome: BiomeType;
   isDiscovered: boolean;
+  // Quest Metadata
+  title: string;
+  description?: string;
+  status: 'todo' | 'in_progress' | 'done' | 'dropped';
 };
 
 // Quest Path Types
