@@ -92,12 +92,19 @@ export async function generateSeasonPlan(goal: string, bossType: string): Promis
     };
 }
 
+import { auth } from "@/auth";
+import { eq } from "drizzle-orm";
+
 export async function createSeason(data: GeneratedSeason) {
-    // Transaction-like insertion
-    // 1. Get User (Hardcoded for v1 MVP)
-    const allUsers = await db.select().from(users).limit(1);
-    const user = allUsers[0];
-    if (!user) throw new Error("No user found");
+    const session = await auth();
+    if (!session?.user?.email) throw new Error("Unauthorized");
+
+    // Get User By Email
+    const user = await db.query.users.findFirst({
+        where: eq(users.email, session.user.email)
+    });
+
+    if (!user) throw new Error("User record not found");
 
     const seasonId = uuidv4();
 
@@ -107,8 +114,8 @@ export async function createSeason(data: GeneratedSeason) {
         userId: user.id,
         title: data.title,
         description: data.description,
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
         bossType: data.bossType,
         bossImageUrl: data.bossImageUrl || null,
         bossHpMax: 100, // TODO: Calc based on quests

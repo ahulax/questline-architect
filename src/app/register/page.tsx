@@ -1,16 +1,15 @@
 "use client";
 
 import { useTransition, useState } from "react";
-import { signIn } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { authenticate } from "@/lib/auth-actions"; // We'll create this next
+import { registerUser } from "@/lib/auth-actions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card } from "@/components/ui/card";
-import { Loader2, KeyRound, ArrowRight } from "lucide-react";
-import { clsx } from "clsx";
+import { Loader2, UserPlus, ArrowRight } from "lucide-react";
+import Link from "next/link";
 
-export default function LoginPage() {
+export default function RegisterPage() {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [error, setError] = useState<string | null>(null);
@@ -18,12 +17,11 @@ export default function LoginPage() {
     async function handleSubmit(formData: FormData) {
         setError(null);
         startTransition(async () => {
-            const result = await authenticate(formData);
+            const result = await registerUser(formData);
             if (result?.error) {
                 setError(result.error);
             } else {
-                // Redirect handled by middleware/action usually, but we can force it
-                // Router refresh handled by action?
+                router.push("/login?refresh=true");
             }
         });
     }
@@ -33,12 +31,12 @@ export default function LoginPage() {
             <Card className="w-full max-w-md p-8 border-primary/20 shadow-[0_0_50px_rgba(255,77,77,0.1)]">
                 <div className="text-center mb-8">
                     <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-primary/20">
-                        <KeyRound className="w-6 h-6 text-primary" />
+                        <UserPlus className="w-6 h-6 text-primary" />
                     </div>
                     <h1 className="text-2xl font-bold bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
-                        Questline Architect
+                        Join the Guild
                     </h1>
-                    <p className="text-text-secondary mt-2">Enter credentials to access the system.</p>
+                    <p className="text-text-secondary mt-2">Create your Questline Architect account.</p>
                 </div>
 
                 <form action={handleSubmit} className="space-y-4">
@@ -49,7 +47,6 @@ export default function LoginPage() {
                             type="email"
                             placeholder="hero@quest.com"
                             required
-                            defaultValue="hero@quest.com"
                         />
                     </div>
 
@@ -60,7 +57,15 @@ export default function LoginPage() {
                             type="password"
                             placeholder="••••••••"
                             required
-                            defaultValue="QuestHero_2024!"
+                            minLength={6}
+                        />
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm font-bold ml-1">Hero Name (Optional)</label>
+                        <Input
+                            name="displayName"
+                            placeholder="Sir Codealot"
                         />
                     </div>
 
@@ -76,14 +81,12 @@ export default function LoginPage() {
                         disabled={isPending}
                     >
                         {isPending ? <Loader2 className="animate-spin" /> : <ArrowRight />}
-                        {isPending ? "Authenticating..." : "Login"}
+                        {isPending ? "Creating Account..." : "Register"}
                     </Button>
                 </form>
 
-                <div className="mt-6 text-center text-xs text-text-muted space-y-2">
-                    <div>
-                        New hero? <a href="/register" className="text-primary hover:underline font-bold">Create Account</a>
-                    </div>
+                <div className="mt-6 text-center text-xs text-text-muted">
+                    Already have an account? <Link href="/login" className="text-primary hover:underline">Login here</Link>
                 </div>
             </Card>
         </div>

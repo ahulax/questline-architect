@@ -1,26 +1,22 @@
-import { drizzle } from "drizzle-orm/better-sqlite3";
-import Database from "better-sqlite3";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 import * as schema from "../db/schema";
-import path from "path";
 
-// Function to handle database connection safely
-// In Next.js dev mode, this prevents multiple connections hot-reloading
-const dbPath = path.resolve(process.cwd(), "sqlite.db");
+/*
+ * Database Connection (Postgres)
+ */
 
-// Using a global variable to maintain the connection in dev
-const globalForDb = global as unknown as {
-    sqlite: Database.Database | undefined
-};
+const connectionString = process.env.DATABASE_URL!;
 
-let sqlite: Database.Database;
-
-if (globalForDb.sqlite) {
-    sqlite = globalForDb.sqlite;
-} else {
-    sqlite = new Database(dbPath);
-    if (process.env.NODE_ENV !== "production") {
-        globalForDb.sqlite = sqlite;
+if (!connectionString) {
+    // In build time or CI, this might fail if we don't have env vars set up, 
+    // but for runtime we need it.
+    if (process.env.NODE_ENV !== 'production' && !process.env.NEXT_PHASE) {
+        console.warn("⚠️ DATABASE_URL is not defined.");
     }
 }
 
-export const db = drizzle(sqlite, { schema });
+// Disable prefetch as it is not supported for "Transaction" pool mode
+const client = postgres(connectionString || "postgres://postgres:postgres@localhost:5432/questline", { prepare: false });
+
+export const db = drizzle(client, { schema });

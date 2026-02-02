@@ -14,10 +14,32 @@ export default async function Home() {
   const data = await getDashboardData();
 
   if (!data?.user) {
-    return <div className="p-8">Please run the seed script locally.</div>;
+    // Should be handled by middleware, but fallback if not
+    return <div className="p-8">Please login.</div>;
   }
 
   const { activeSeason, quests, questlines: seasonQuestlines } = data;
+
+  // New User / No Season State
+  if (!activeSeason) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center space-y-6 animate-in fade-in slide-in-from-bottom-4">
+        <div className="w-24 h-24 bg-primary/10 rounded-full flex items-center justify-center border border-primary/20 mb-4">
+          <Sword className="w-12 h-12 text-primary" />
+        </div>
+        <h1 className="text-4xl font-bold">Welcome, {data.user.displayName || "Adventurer"}</h1>
+        <p className="text-xl text-text-secondary max-w-lg">
+          Every hero needs a quest. Your journey begins by defining a "Season" — a 30-day campaign to achieve a major goal.
+        </p>
+        <a
+          href="/season/new"
+          className="inline-flex items-center justify-center h-12 px-8 rounded-full bg-primary text-bg-void font-bold text-lg hover:brightness-110 transition-all shadow-[0_0_20px_rgba(255,77,77,0.4)]"
+        >
+          Start Your First Campaign
+        </a>
+      </div>
+    )
+  }
 
   // --- Campaign Grouping Logic ---
   const groups = (seasonQuestlines || []).map(ql => {
@@ -25,11 +47,11 @@ export default async function Home() {
       id: ql.id,
       title: ql.title,
       stats: (ql as any).stats || { done: 0, total: 0 },
-      quests: quests.filter(q => q.questlineId === ql.id)
+      quests: quests?.filter(q => q.questlineId === ql.id) || []
     };
   }).filter(g => g.quests.length > 0);
 
-  const standaloneQuests = quests.filter(q => !q.questlineId);
+  const standaloneQuests = quests?.filter(q => !q.questlineId) || [];
 
   return (
     <DashboardAnimator>
@@ -39,12 +61,10 @@ export default async function Home() {
           <h1 className="text-3xl font-bold text-white mb-1">Today's Campaign</h1>
           <p className="text-text-secondary">Defeat the chaos. One quest at a time.</p>
         </div>
-        {activeSeason && (
-          <div className="text-right bg-bg-panel px-4 py-2 rounded-lg border border-border-subtle">
-            <div className="text-xs text-text-muted uppercase tracking-wider">Current Season</div>
-            <div className="text-lg font-bold text-accent">{activeSeason.title}</div>
-          </div>
-        )}
+        <div className="text-right bg-bg-panel px-4 py-2 rounded-lg border border-border-subtle">
+          <div className="text-xs text-text-muted uppercase tracking-wider">Current Season</div>
+          <div className="text-lg font-bold text-accent">{activeSeason.title}</div>
+        </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -72,7 +92,7 @@ export default async function Home() {
               ) : (
                 <>
                   {groups.map((group) => {
-                    const progress = Math.round((group.stats.done / group.stats.total) * 100);
+                    const progress = group.stats.total > 0 ? Math.round((group.stats.done / group.stats.total) * 100) : 0;
                     return (
                       <div key={group.id} className="space-y-6">
                         <div className="flex flex-col gap-2">
@@ -124,16 +144,7 @@ export default async function Home() {
 
         {/* Level / Season Boss (Right Col) */}
         <div className="space-y-6">
-          {activeSeason ? (
-            <SeasonBossCard season={activeSeason} />
-          ) : (
-            <Card>
-              <div className="text-center py-8">
-                <h3 className="font-bold mb-2">No Active Season</h3>
-                <a href="/season/new" className="btn btn-primary">Start Campaign</a>
-              </div>
-            </Card>
-          )}
+          <SeasonBossCard season={activeSeason} />
 
           {/* New Forge Call to Action */}
           <div className="p-4 rounded border border-accent/20 bg-accent/5">

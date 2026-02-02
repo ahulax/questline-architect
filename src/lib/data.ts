@@ -12,6 +12,7 @@ export async function getDashboardData() {
     const usersResult = await db.select().from(users).where(eq(users.email, session.user.email)).limit(1);
     const user = usersResult[0];
 
+    // If no user found in DB (shouldn't happen if auth worked), return null
     if (!user) return null;
 
     // 2. Get Active Season
