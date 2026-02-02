@@ -13,6 +13,7 @@ export async function toggleQuestStatus(questId: string, currentStatus: string) 
         console.log(`[ACTION] Toggling quest ${questId} from ${currentStatus}`);
 
         // 1. Fetch Quest Details
+        console.log(`[ACTION] Fetching quest ${questId}`);
         const questList = await db.select().from(quests).where(eq(quests.id, questId)).limit(1);
         const quest = questList[0];
 
@@ -140,6 +141,10 @@ export async function toggleQuestStatus(questId: string, currentStatus: string) 
         console.log(`[ACTION] Complete.`);
     } catch (e) {
         console.error("CRITICAL ACTION ERROR:", e);
+        if (e instanceof Error) {
+            console.error(e.stack);
+            console.error(e.message);
+        }
         throw e;
     }
 }

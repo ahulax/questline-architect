@@ -14,6 +14,7 @@ import { SeasonProvider, useSeason } from "@/components/season-context";
 import { getEnemyImage } from "@/lib/flavor-utils";
 import { useRouter } from "next/navigation";
 import { addQuestNoteAction } from "@/lib/forge-actions";
+import { toast } from "sonner";
 
 interface QuestProps {
     quest: {
@@ -132,6 +133,7 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                 router.refresh();
             } catch (error) {
                 console.error("Quest toggle failed:", error);
+                toast.error("Complete failed. Check console.");
 
                 // Revert optimistic updates if needed
                 setIsVisible(true);
