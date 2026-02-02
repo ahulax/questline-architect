@@ -33,6 +33,7 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [isVisible, setIsVisible] = useState(true);
     const isDone = quest.status === "done";
 
     // Find children
@@ -80,6 +81,10 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
 
                 // Trigger Global Post-Completion Flow
                 if (quest.status !== "done") {
+
+                    // Optimistic Hide
+                    setIsVisible(false);
+
                     if (quest.effort === 'L') {
                         console.log("Triggering Victory Ceremony for L-tier quest");
                         triggerVictory(quest);
@@ -93,14 +98,16 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                 router.refresh();
             } catch (error) {
                 console.error("Quest toggle failed:", error);
-                // Revert optimistic updates if needed, but for now just alert
-                // toast.error("Failed to update quest. Please try again.");
-                // Better to just fail silently-ish than crash app.
+
+                // Revert optimistic updates if needed
+                setIsVisible(true);
             }
         });
     };
 
     const displayEnemy = flavor.enemyType || `${quest.title.split(' ')[0]} ${quest.type === 'main' ? 'Wraith' : 'Mimic'}`;
+
+    if (!isVisible) return null;
 
     return (
         <div className="space-y-2">
