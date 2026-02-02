@@ -16,7 +16,7 @@ export async function toggleQuestStatus(questId: string, currentStatus: string) 
     if (!quest) throw new Error("Quest not found");
 
     const newStatus = currentStatus === "done" ? "todo" : "done";
-    const now = new Date().toISOString();
+    const now = new Date();
 
     // 2. Update Quest
     await db.update(quests)

@@ -51,7 +51,6 @@ export async function generateRecap() {
     // Get REAL Stats Context
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const isoDate = sevenDaysAgo.toISOString();
 
     const weeklyQuests = await db
         .select()
@@ -60,7 +59,7 @@ export async function generateRecap() {
             and(
                 eq(quests.seasonId, activeSeason.id),
                 eq(quests.status, "done"),
-                sql`${quests.completedAt} >= ${isoDate}`
+                sql`${quests.completedAt} >= ${sevenDaysAgo}`
             )
         );
 
@@ -166,7 +165,6 @@ export async function syncRecap(seasonId: string) {
 async function generateRecapStatsOnly(seasonId: string) {
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-    const isoDate = sevenDaysAgo.toISOString();
 
     const weeklyQuests = await db
         .select()
@@ -175,7 +173,7 @@ async function generateRecapStatsOnly(seasonId: string) {
             and(
                 eq(quests.seasonId, seasonId),
                 eq(quests.status, "done"),
-                sql`${quests.completedAt} >= ${isoDate}`
+                sql`${quests.completedAt} >= ${sevenDaysAgo}`
             )
         );
 
