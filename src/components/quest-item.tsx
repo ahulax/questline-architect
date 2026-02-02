@@ -8,10 +8,12 @@ import { toggleQuestStatus } from "@/lib/actions";
 import { motion } from "framer-motion";
 import { itemVariants } from "./dashboard-animator";
 import { QuestDetailModal } from "@/components/quest-forge/quest-detail-modal";
+import { QuestCompletionModal } from "@/components/quest-completion-modal";
 import confetti from "canvas-confetti";
 import { SeasonProvider, useSeason } from "@/components/season-context";
 import { getEnemyImage } from "@/lib/flavor-utils";
 import { useRouter } from "next/navigation";
+import { addQuestNoteAction } from "@/lib/forge-actions";
 
 interface QuestProps {
     quest: {
@@ -33,6 +35,7 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isDetailOpen, setIsDetailOpen] = useState(false);
+    const [showCompletionModal, setShowCompletionModal] = useState(false);
     const [isVisible, setIsVisible] = useState(true);
     const isDone = quest.status === "done";
 
@@ -47,9 +50,37 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
 
     const { damageBoss, addXp, triggerVictory, triggerReview } = useSeason();
 
-    const handleToggle = () => {
+    const handleClick = (e: React.MouseEvent) => {
+        e.stopPropagation();
+        if (isDone) {
+            // Instant Undo
+            performToggle();
+        } else {
+            // Open Completion Modal
+            setShowCompletionModal(true);
+        }
+    };
+
+    const handleCompletionConfirmed = async (note: string) => {
+        setShowCompletionModal(false);
+
+        // 1. Save Note (if any)
+        if (note.trim()) {
+            try {
+                await addQuestNoteAction(quest.id, note);
+            } catch (e) {
+                console.error("Failed to save note", e);
+            }
+        }
+
+        // 2. Perform Toggle & Optimistic Updates
+        performToggle(true);
+    };
+
+    const performToggle = (isCompleting: boolean = false) => {
         startTransition(async () => {
-            if (quest.status !== "done") {
+            // Optimistic XP/Damage Logic
+            if (!isDone) { // If we are completing it right now
                 const xpMap: Record<string, number> = { S: 5, M: 10, L: 20 };
                 const damageMap: Record<string, number> = { S: 5, M: 15, L: 25 };
 
@@ -79,18 +110,15 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
             try {
                 await toggleQuestStatus(quest.id, quest.status);
 
-                // Trigger Global Post-Completion Flow
-                if (quest.status !== "done") {
+                // If completing, fix the UI
+                if (!isDone) {
 
                     // Optimistic Hide
                     setIsVisible(false);
 
+                    // Trigger Victory ONLY (Review handled by modal input now)
                     if (quest.effort === 'L') {
-                        console.log("Triggering Victory Ceremony for L-tier quest");
                         triggerVictory(quest);
-                    } else {
-                        console.log("Triggering Post-Battle Review directly");
-                        triggerReview(quest);
                     }
                 }
 
@@ -134,10 +162,7 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                     )}
 
                     <button
-                        onClick={(e) => {
-                            e.stopPropagation();
-                            handleToggle();
-                        }}
+                        onClick={handleClick}
                         disabled={isPending}
                         className={clsx(
                             "transition-colors z-10",
@@ -238,6 +263,13 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                 open={isDetailOpen}
                 onOpenChange={setIsDetailOpen}
                 quest={quest}
+            />
+
+            <QuestCompletionModal
+                isOpen={showCompletionModal}
+                onClose={() => setShowCompletionModal(false)}
+                onComplete={handleCompletionConfirmed}
+                questTitle={quest.title}
             />
         </div>
     );
