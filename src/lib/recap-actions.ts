@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { aiArtifacts, users, seasons, quests, questNotes } from "@/db/schema";
 import { v4 as uuidv4 } from "uuid";
 import { desc, eq, and, sql } from "drizzle-orm";
+import { revalidatePath } from "next/cache";
 
 export type RecapData = {
     episodeTitle: string;
@@ -135,6 +136,9 @@ export async function generateRecap(seasonId: string) {
                         inputPayload: JSON.stringify({ prompt }),
                         outputText: JSON.stringify(aiData),
                     });
+                    revalidatePath("/recap");
+                    revalidatePath("/");
+                    revalidatePath("/season");
                     return aiData;
                 }
             } catch (aiError) {
@@ -161,6 +165,10 @@ export async function generateRecap(seasonId: string) {
             inputPayload: JSON.stringify({ seasonId: activeSeason.id, date: new Date() }),
             outputText: JSON.stringify(mockData),
         });
+
+        revalidatePath("/recap");
+        revalidatePath("/");
+        revalidatePath("/season");
 
         return mockData;
 
