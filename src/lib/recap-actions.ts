@@ -96,45 +96,50 @@ export async function generateRecap(seasonId: string) {
 
         // 2. Try Real AI
         if (hasApiKey) {
-            const prompt = `
-           Act as "The Architect", a mysterious RPG narrator.
-           Write a Weekly Recap for a player.
-           Season Theme: "${activeSeason.title}" against Boss "${activeSeason.bossType}".
-           
-           Stats: 
-           - XP: ${stats.xpGained}
-           - Quests: ${stats.questsCompleted}
-           - Damage: ${stats.bossDamageDealt}
-           
-           RECENTLY COMPLETED QUESTS AND NOTES:
-           ${completedQuestInfo}
-           
-           INSTRUCTIONS:
-           - Use the user's notes to personalize the narrative. If they mentioned struggles or victories, reference them metaphorically.
-           - Write a dramatic paragraph (max 3 sentences) summarizing their progress.
-           
-           Output JSON:
-           {
-             "episodeTitle": "Episode [Number]: [Title]",
-             "narrative": "A dramatic paragraph (max 3 sentences) summarizing their progress.",
-             "stats": { "xpGained": ${stats.xpGained}, "questsCompleted": ${stats.questsCompleted}, "bossDamageDealt": ${stats.bossDamageDealt} },
-             "generatedAt": "${new Date().toISOString()}"
-           }
-         `;
+            try {
+                const prompt = `
+                Act as "The Architect", a mysterious RPG narrator.
+                Write a Weekly Recap for a player.
+                Season Theme: "${activeSeason.title}" against Boss "${activeSeason.bossType}".
+                
+                Stats: 
+                - XP: ${stats.xpGained}
+                - Quests: ${stats.questsCompleted}
+                - Damage: ${stats.bossDamageDealt}
+                
+                RECENTLY COMPLETED QUESTS AND NOTES:
+                ${completedQuestInfo}
+                
+                INSTRUCTIONS:
+                - Use the user's notes to personalize the narrative. If they mentioned struggles or victories, reference them metaphorically.
+                - Write a dramatic paragraph (max 3 sentences) summarizing their progress.
+                
+                Output JSON:
+                {
+                  "episodeTitle": "Episode [Number]: [Title]",
+                  "narrative": "A dramatic paragraph (max 3 sentences) summarizing their progress.",
+                  "stats": { "xpGained": ${stats.xpGained}, "questsCompleted": ${stats.questsCompleted}, "bossDamageDealt": ${stats.bossDamageDealt} },
+                  "generatedAt": "${new Date().toISOString()}"
+                }
+                `;
 
-            const aiData = await generateJSON<RecapData>(prompt);
-            if (aiData) {
-                // 3. Save Artifact
-                const artifactId = uuidv4();
-                await db.insert(aiArtifacts).values({
-                    id: artifactId,
-                    userId: activeSeason.userId,
-                    seasonId: activeSeason.id,
-                    type: "weekly_recap",
-                    inputPayload: JSON.stringify({ prompt }),
-                    outputText: JSON.stringify(aiData),
-                });
-                return aiData;
+                const aiData = await generateJSON<RecapData>(prompt);
+                if (aiData) {
+                    // 3. Save Artifact
+                    const artifactId = uuidv4();
+                    await db.insert(aiArtifacts).values({
+                        id: artifactId,
+                        userId: activeSeason.userId,
+                        seasonId: activeSeason.id,
+                        type: "weekly_recap",
+                        inputPayload: JSON.stringify({ prompt }),
+                        outputText: JSON.stringify(aiData),
+                    });
+                    return aiData;
+                }
+            } catch (aiError) {
+                console.error("AI Generation Failed, falling back to mock:", aiError);
+                // Proceed to mock fallback
             }
         }
 
