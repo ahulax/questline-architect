@@ -71,7 +71,7 @@ export async function generateRecap(seasonId: string) {
             where: and(
                 eq(quests.seasonId, activeSeason.id),
                 eq(quests.status, "done"),
-                sql`${quests.completedAt} >= ${sevenDaysAgo}`
+                sql`${quests.completedAt} >= ${sevenDaysAgo.toISOString()}`
             ),
             with: {
                 notes: true
@@ -99,26 +99,31 @@ export async function generateRecap(seasonId: string) {
         if (hasApiKey) {
             try {
                 const prompt = `
-                Act as "The Architect", a mysterious RPG narrator.
-                Write a Weekly Recap for a player.
-                Season Theme: "${activeSeason.title}" against Boss "${activeSeason.bossType}".
+                Act as "The Architect", a mysterious RPG narrator who observes the player's every move.
+                Your task is to write a Weekly Recap that feels deeply personal and reactive to the player's thoughts.
+                
+                Season Theme: "${activeSeason.title}"
+                Current Boss: "${activeSeason.bossType}"
                 
                 Stats: 
-                - XP: ${stats.xpGained}
-                - Quests: ${stats.questsCompleted}
-                - Damage: ${stats.bossDamageDealt}
+                - XP Gained: ${stats.xpGained}
+                - Quests Cleared: ${stats.questsCompleted}
+                - Boss Damage: ${stats.bossDamageDealt}
                 
-                RECENTLY COMPLETED QUESTS AND NOTES:
-                ${completedQuestInfo}
+                PLAYER'S ACTIONS AND REFLECTIONS (CRITICAL CONTEXT):
+                ${completedQuestInfo || "The player was quiet this week. No specific reflections were recorded."}
                 
                 INSTRUCTIONS:
-                - Use the user's notes to personalize the narrative. If they mentioned struggles or victories, reference them metaphorically.
-                - Write a dramatic paragraph (max 3 sentences) summarizing their progress.
+                - DO NOT use generic RPG platitudes if the player has provided notes.
+                - If the player mentions specific struggles (e.g. "it was hard", "I failed"), reference them as battles fought in the mind or the spirit.
+                - If the player mentions success or specific details (e.g. "set up the DB", "coded the logic"), weave those into the "Director's" narrative as building the foundations of the world.
+                - The tone should be mysterious, slightly dark, but encouraging.
+                - Maximum 3 sentences for the narrative.
                 
                 Output JSON:
                 {
-                  "episodeTitle": "Episode [Number]: [Title]",
-                  "narrative": "A dramatic paragraph (max 3 sentences) summarizing their progress.",
+                  "episodeTitle": "Episode [Number]: [A unique title based on the week's notes]",
+                  "narrative": "Your personal, note-driven narrative.",
                   "stats": { "xpGained": ${stats.xpGained}, "questsCompleted": ${stats.questsCompleted}, "bossDamageDealt": ${stats.bossDamageDealt} },
                   "generatedAt": "${new Date().toISOString()}"
                 }
@@ -133,7 +138,10 @@ export async function generateRecap(seasonId: string) {
                         userId: activeSeason.userId,
                         seasonId: activeSeason.id,
                         type: "weekly_recap",
-                        inputPayload: JSON.stringify({ prompt }),
+                        inputPayload: JSON.stringify({
+                            prompt,
+                            contentHash: getRecapContentHash(weeklyQuests)
+                        }),
                         outputText: JSON.stringify(aiData),
                     });
                     revalidatePath("/recap");
@@ -143,17 +151,11 @@ export async function generateRecap(seasonId: string) {
                 }
             } catch (aiError) {
                 console.error("AI Generation Failed, falling back to mock:", aiError);
-                // Proceed to mock fallback
             }
         }
 
         // 3. Fallback to Mock
-        const mockData: RecapData = {
-            episodeTitle: `The ${activeSeason.bossType} Incursion`,
-            narrative: `In this week's episode, our hero faced the daunting presence of ${activeSeason.bossType}. Despite initial setbacks, the completion of critical main quests dealt significant damage to the enemy. The momentum is shifting. The Architect is pleased with your progress, but warns that the mid-season slump is approaching. Stay vigilant.`,
-            stats: stats,
-            generatedAt: new Date().toISOString()
-        };
+        const mockData: RecapData = getMockRecap(activeSeason, stats, weeklyQuests);
 
         // Save Mock
         const artifactId = uuidv4();
@@ -162,7 +164,11 @@ export async function generateRecap(seasonId: string) {
             userId: activeSeason.userId,
             seasonId: activeSeason.id,
             type: "weekly_recap",
-            inputPayload: JSON.stringify({ seasonId: activeSeason.id, date: new Date() }),
+            inputPayload: JSON.stringify({
+                seasonId: activeSeason.id,
+                date: new Date(),
+                contentHash: getRecapContentHash(weeklyQuests)
+            }),
             outputText: JSON.stringify(mockData),
         });
 
@@ -174,61 +180,100 @@ export async function generateRecap(seasonId: string) {
 
     } catch (error) {
         console.error("generateRecap CRASH:", error);
-        // Safely return null to prevent 500
         return null;
     }
 }
 
+/**
+ * Sync recap ensures the dashboard has the latest data.
+ * It will trigger a full regeneration if:
+ * 1. No recap exists.
+ * 2. The recap is older than 6 hours.
+ * 3. The underlying data (quest count or notes) has changed since the last recap.
+ */
 export async function syncRecap(seasonId: string) {
     const latest = await getLatestRecap(seasonId);
 
-    // If no recap exists or if the latest one is older than 1 hour, regenerate fully
-    const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000);
-    const shouldFullRegen = !latest || new Date(latest.createdAt!) < oneHourAgo;
+    // Fetch fresh stats and notes hash
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
 
-    if (shouldFullRegen) {
+    const weeklyQuests = await db.query.quests.findMany({
+        where: and(
+            eq(quests.seasonId, seasonId),
+            eq(quests.status, "done"),
+            sql`${quests.completedAt} >= ${sevenDaysAgo.toISOString()}`
+        ),
+        with: { notes: true }
+    });
+
+    const currentHash = getRecapContentHash(weeklyQuests);
+    const savedPayload = latest ? JSON.parse(latest.inputPayload || '{}') : {};
+    const savedHash = savedPayload.contentHash;
+
+    const sixHoursAgo = new Date(Date.now() - 6 * 60 * 60 * 1000);
+    const isStale = !latest || new Date(latest.createdAt!) < sixHoursAgo;
+    const hasChanged = currentHash !== savedHash;
+
+    if (isStale || hasChanged) {
+        console.log(`Regenerating recap for ${seasonId}. Reason: ${isStale ? 'Stale' : 'Content Changed'}`);
         await generateRecap(seasonId);
     } else {
-        // Just update the stats to keep it "strictly in line" with activity
-        // without burning AI credits/wait time for every minor click
-        const freshData = await generateRecapStatsOnly(seasonId);
+        // Just update numbers if it's very fresh and nothing meaningful changed
+        console.log(`Recap for ${seasonId} is fresh and content unchanged. Syncing stats only.`);
+        const freshStats = {
+            xpGained: weeklyQuests.reduce((sum, q) => sum + (q.effort === 'S' ? 5 : q.effort === 'M' ? 10 : 20), 0),
+            questsCompleted: weeklyQuests.length,
+            bossDamageDealt: weeklyQuests.reduce((sum, q) => {
+                if (q.type !== 'main') return sum;
+                return sum + (q.effort === 'S' ? 5 : q.effort === 'M' ? 15 : 25);
+            }, 0)
+        };
 
-        // Update the existing artifact's outputText
         const updatedData = {
             ...latest.data,
-            stats: freshData,
+            stats: freshStats,
             generatedAt: new Date().toISOString()
         };
 
         await db.update(aiArtifacts)
-            .set({
-                outputText: JSON.stringify(updatedData)
-            })
+            .set({ outputText: JSON.stringify(updatedData) })
             .where(eq(aiArtifacts.id, latest.id));
+
+        revalidatePath("/");
     }
 }
 
-async function generateRecapStatsOnly(seasonId: string) {
-    const sevenDaysAgo = new Date();
-    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+// HELPERS
 
-    const weeklyQuests = await db
-        .select()
-        .from(quests)
-        .where(
-            and(
-                eq(quests.seasonId, seasonId),
-                eq(quests.status, "done"),
-                sql`${quests.completedAt} >= ${sevenDaysAgo}`
-            )
-        );
+function getRecapContentHash(quests: any[]) {
+    // Basic string representation of IDs and note text to detect changes
+    return quests
+        .map(q => `${q.id}:${q.notes.map((n: any) => n.text).join('|')}`)
+        .sort()
+        .join(';');
+}
+
+function getMockRecap(activeSeason: any, stats: any, weeklyQuests: any[]): RecapData {
+    const hasNotes = weeklyQuests.some((q: any) => q.notes.length > 0);
+
+    const templates = [
+        `The Architect watches as you dismantle the chaos. Your progress against ${activeSeason.bossType} is noted.`,
+        `The ink of fate writes of your recent victories. ${stats.questsCompleted} battles won, yet more shadow remains.`,
+        `A productive cycle, hero. The foundations of ${activeSeason.title} grow stronger with every quest.`
+    ];
+
+    const noteAddon = hasNotes
+        ? " Your recorded reflections show a mind sharpening for the coming storm."
+        : " The Architect waits for your deeper reflections; do not be a silent warrior.";
+
+    const randomIdx = Math.floor(Math.abs(Math.sin(stats.questsCompleted) * templates.length));
 
     return {
-        xpGained: weeklyQuests.reduce((sum, q) => sum + (q.effort === 'S' ? 5 : q.effort === 'M' ? 10 : 20), 0),
-        questsCompleted: weeklyQuests.length,
-        bossDamageDealt: weeklyQuests.reduce((sum, q) => {
-            if (q.type !== 'main') return sum;
-            return sum + (q.effort === 'S' ? 5 : q.effort === 'M' ? 15 : 25);
-        }, 0)
+        episodeTitle: `The ${activeSeason.bossType} Chronicles`,
+        narrative: `${templates[randomIdx]}${noteAddon}`,
+        stats,
+        generatedAt: new Date().toISOString()
     };
 }
+
