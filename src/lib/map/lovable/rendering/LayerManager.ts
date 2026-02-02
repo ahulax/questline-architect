@@ -414,62 +414,63 @@ export class LayerManager {
   private drawNodeIcon(graphics: Graphics, type: MapNode['type'], size: number, isCompleted: boolean = false): void {
     const iconColor = isCompleted ? 0xffffff : 0xaaaaaa; // Bright white for completed, grey for foundation
 
+    switch (type) {
       case 'town':
-    // House icon
-    graphics.poly([0, -size, -size * 0.7, 0, size * 0.7, 0]).fill(iconColor);
-    graphics.rect(-size * 0.4, 0, size * 0.8, size * 0.6).fill(iconColor);
-    break;
+        // House icon
+        graphics.poly([0, -size, -size * 0.7, 0, size * 0.7, 0]).fill(iconColor);
+        graphics.rect(-size * 0.4, 0, size * 0.8, size * 0.6).fill(iconColor);
+        break;
 
       case 'ruins':
-    // Broken pillars (Small camp)
-    graphics.rect(-size * 0.5, -size * 0.3, size * 0.3, size * 0.8).fill(iconColor);
-    graphics.rect(size * 0.2, -size * 0.5, size * 0.3, size).fill(iconColor);
-    break;
+        // Broken pillars (Small camp)
+        graphics.rect(-size * 0.5, -size * 0.3, size * 0.3, size * 0.8).fill(iconColor);
+        graphics.rect(size * 0.2, -size * 0.5, size * 0.3, size).fill(iconColor);
+        break;
 
       case 'fortress':
-    // Tower with crenellations (Grand Castle/Dungeon)
-    graphics.rect(-size * 0.6, -size * 0.4, size * 1.2, size * 1.0).fill(iconColor); // Main keep
-    graphics.rect(-size * 0.8, -size * 0.4, size * 0.4, size * 1.2).fill(iconColor); // Left tower
-    graphics.rect(size * 0.4, -size * 0.4, size * 0.4, size * 1.2).fill(iconColor); // Right tower
-    // Roofs
-    graphics.poly([-size * 0.8, -size * 0.6, -size * 0.6, -size * 0.4, -size * 0.4, -size * 0.6]).fill(iconColor);
-    graphics.poly([size * 0.4, -size * 0.6, size * 0.6, -size * 0.4, size * 0.8, -size * 0.6]).fill(iconColor);
-    break;
+        // Tower with crenellations (Grand Castle/Dungeon)
+        graphics.rect(-size * 0.6, -size * 0.4, size * 1.2, size * 1.0).fill(iconColor); // Main keep
+        graphics.rect(-size * 0.8, -size * 0.4, size * 0.4, size * 1.2).fill(iconColor); // Left tower
+        graphics.rect(size * 0.4, -size * 0.4, size * 0.4, size * 1.2).fill(iconColor); // Right tower
+        // Roofs
+        graphics.poly([-size * 0.8, -size * 0.6, -size * 0.6, -size * 0.4, -size * 0.4, -size * 0.6]).fill(iconColor);
+        graphics.poly([size * 0.4, -size * 0.6, size * 0.6, -size * 0.4, size * 0.8, -size * 0.6]).fill(iconColor);
+        break;
 
       case 'stone_circle': // Using as 'Camp' or generic small point
       case 'portal':
-    // Swirl / Camp fire
-    graphics.circle(0, 0, size * 0.5).stroke({ color: iconColor, width: 2 });
-    graphics.poly([-size * 0.3, size * 0.3, 0, -size * 0.4, size * 0.3, size * 0.3]).fill(iconColor);
-    break;
-  }
-}
-
-/**
- * Clear all layers
- */
-clear(): void {
-  this.terrainLayer.removeChildren();
-  this.fogLayer.removeChildren();
-  this.pathLayer.removeChildren();
-  this.nodeLayer.removeChildren();
-  this.uiLayer.removeChildren();
-  this.activeChunkRefs.clear();
-  this.chunkRenderer.clearCache();
-
-  // Clear fog graphics
-  for(const fog of this.fogGraphics.values()) {
-  fog.destroy();
-}
-this.fogGraphics.clear();
+        // Swirl / Camp fire
+        graphics.circle(0, 0, size * 0.5).stroke({ color: iconColor, width: 2 });
+        graphics.poly([-size * 0.3, size * 0.3, 0, -size * 0.4, size * 0.3, size * 0.3]).fill(iconColor);
+        break;
+    }
   }
 
-/**
- * Destroy and cleanup
- */
-destroy(): void {
-  this.clear();
-  this.chunkRenderer.clearCache();
-  this.worldContainer.destroy({ children: true });
-}
+  /**
+   * Clear all layers
+   */
+  clear(): void {
+    this.terrainLayer.removeChildren();
+    this.fogLayer.removeChildren();
+    this.pathLayer.removeChildren();
+    this.nodeLayer.removeChildren();
+    this.uiLayer.removeChildren();
+    this.activeChunkRefs.clear();
+    this.chunkRenderer.clearCache();
+
+    // Clear fog graphics
+    for (const fog of this.fogGraphics.values()) {
+      fog.destroy();
+    }
+    this.fogGraphics.clear();
+  }
+
+  /**
+   * Destroy and cleanup
+   */
+  destroy(): void {
+    this.clear();
+    this.chunkRenderer.clearCache();
+    this.worldContainer.destroy({ children: true });
+  }
 }
