@@ -23,6 +23,9 @@ interface SeasonContextType {
     triggerReview: (quest: any) => void;
     clearVictory: () => void;
     clearReview: () => void;
+    // Client-Side Exclusion (Anti-Ghosting)
+    recentlyCompletedQuests: Set<string>;
+    markQuestCompleted: (id: string) => void;
 }
 
 const SeasonContext = createContext<SeasonContextType | undefined>(undefined);
@@ -31,6 +34,7 @@ export function SeasonProvider({ children }: { children: ReactNode }) {
     const [state, setState] = useState<SeasonState | null>(null);
     const [victoryQuest, setVictoryQuest] = useState<any | null>(null);
     const [reviewQuest, setReviewQuest] = useState<any | null>(null);
+    const [recentlyCompletedQuests, setRecentlyCompletedQuests] = useState<Set<string>>(new Set());
 
     const initialize = (data: SeasonState) => {
         if (!state) setState(data);
@@ -62,10 +66,19 @@ export function SeasonProvider({ children }: { children: ReactNode }) {
     const clearVictory = () => setVictoryQuest(null);
     const clearReview = () => setReviewQuest(null);
 
+    const markQuestCompleted = (id: string) => {
+        setRecentlyCompletedQuests(prev => {
+            const next = new Set(prev);
+            next.add(id);
+            return next;
+        });
+    };
+
     return (
         <SeasonContext.Provider value={{
             state, initialize, addXp, damageBoss, undoStats,
-            victoryQuest, reviewQuest, triggerVictory, triggerReview, clearVictory, clearReview
+            victoryQuest, reviewQuest, triggerVictory, triggerReview, clearVictory, clearReview,
+            recentlyCompletedQuests, markQuestCompleted
         }}>
             {children}
         </SeasonContext.Provider>

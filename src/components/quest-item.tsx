@@ -54,7 +54,7 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
         if (quest.flavorData) flavor = JSON.parse(quest.flavorData);
     } catch (e) { }
 
-    const { damageBoss, addXp, triggerVictory, triggerReview } = useSeason();
+    const { damageBoss, addXp, triggerVictory, markQuestCompleted, recentlyCompletedQuests } = useSeason();
 
     const handleClick = (e: React.MouseEvent) => {
         e.stopPropagation();
@@ -87,6 +87,8 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
         // 1. Instant Optimistic Hide (if completing)
         if (!isDone) {
             setIsVisible(false);
+            // CRITICAL: Mark as locally completed to prevent "ghost" reappearance
+            markQuestCompleted(quest.id);
         }
 
         startTransition(async () => {
@@ -133,8 +135,6 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                 }
 
                 // Force a router refresh to ensure list is updated
-                // Small delay to allow DB propagation before refresh
-                await new Promise(resolve => setTimeout(resolve, 300));
                 router.refresh();
             } catch (error) {
                 console.error("Quest toggle failed:", error);
@@ -150,6 +150,7 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
 
     // Force hide if requested and done
     if (hideOnComplete && isDone) return null;
+    if (recentlyCompletedQuests.has(quest.id)) return null; // Client-side exclusion
     if (!isVisible) return null;
 
     return (
