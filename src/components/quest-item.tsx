@@ -11,6 +11,7 @@ import { QuestDetailModal } from "@/components/quest-forge/quest-detail-modal";
 import confetti from "canvas-confetti";
 import { SeasonProvider, useSeason } from "@/components/season-context";
 import { getEnemyImage } from "@/lib/flavor-utils";
+import { useRouter } from "next/navigation";
 
 interface QuestProps {
     quest: {
@@ -29,6 +30,7 @@ interface QuestProps {
 }
 
 export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false }: QuestProps) {
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [isDetailOpen, setIsDetailOpen] = useState(false);
     const isDone = quest.status === "done";
@@ -79,11 +81,16 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                 // Trigger Global Post-Completion Flow
                 if (quest.status !== "done") {
                     if (quest.effort === 'L') {
+                        console.log("Triggering Victory Ceremony for L-tier quest");
                         triggerVictory(quest);
                     } else {
+                        console.log("Triggering Post-Battle Review directly");
                         triggerReview(quest);
                     }
                 }
+
+                // Force a router refresh to ensure list is updated
+                router.refresh();
             } catch (error) {
                 console.error("Quest toggle failed:", error);
                 // Revert optimistic updates if needed, but for now just alert
