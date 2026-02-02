@@ -331,18 +331,34 @@ export class LayerManager {
       const baseSize = 20;
       const discovered = node.isDiscovered;
 
-      // Outer glow
+      // Base circle and Color Selection
+      let baseColor = 0x444444;
+      let strokeColor = 0x666666;
+      let strokeWidth = 2;
+
       if (discovered) {
-        graphics.circle(0, 0, baseSize + 8).fill({ color: 0xffffff, alpha: 0.2 });
+        if (node.status === 'done') {
+          // Completed: Gold/Bright - Structure Built
+          baseColor = this.getNodeColor(node.type);
+          strokeColor = 0xffd700; // Gold border
+        } else {
+          // In Progress/Todo: Blueprint/Foundation - Greyish
+          baseColor = 0x555566;
+          strokeColor = 0x8888aa;
+        }
       }
 
-      // Base circle
-      const baseColor = discovered ? this.getNodeColor(node.type) : 0x444444;
+      // Outer glow for completed
+      if (discovered && node.status === 'done') {
+        graphics.circle(0, 0, baseSize + 8).fill({ color: 0xffd700, alpha: 0.2 });
+      }
+
       graphics.circle(0, 0, baseSize).fill(baseColor);
 
       // Inner detail based on type
       if (discovered) {
-        this.drawNodeIcon(graphics, node.type, baseSize * 0.6);
+        // Pass status to icon drawer to control icon brightness/style if needed
+        this.drawNodeIcon(graphics, node.type, baseSize * 0.6, node.status === 'done');
       } else {
         // Question mark for undiscovered
         graphics.circle(0, -4, 4).fill(0x888888);
@@ -351,8 +367,8 @@ export class LayerManager {
 
       // Border
       graphics.circle(0, 0, baseSize).stroke({
-        color: discovered ? 0xffffff : 0x666666,
-        width: 2
+        color: strokeColor,
+        width: strokeWidth
       });
 
       nodeContainer.addChild(graphics);
@@ -392,8 +408,8 @@ export class LayerManager {
   /**
    * Draw icon for node type
    */
-  private drawNodeIcon(graphics: Graphics, type: MapNode['type'], size: number): void {
-    const iconColor = 0xffffff;
+  private drawNodeIcon(graphics: Graphics, type: MapNode['type'], size: number, isCompleted: boolean = false): void {
+    const iconColor = isCompleted ? 0xffffff : 0xaaaaaa; // Bright white for completed, grey for foundation
 
     switch (type) {
       case 'town':
