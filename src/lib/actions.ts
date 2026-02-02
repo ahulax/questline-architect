@@ -136,8 +136,8 @@ export async function toggleQuestStatus(questId: string, currentStatus: string) 
                 .where(eq(seasons.id, season.id));
         }
 
-        revalidatePath("/");
-        revalidatePath("/quest-forge");
+        revalidatePath("/", "layout");
+        revalidatePath("/quest-forge", "layout");
         console.log(`[ACTION] Complete.`);
     } catch (e) {
         console.error("CRITICAL ACTION ERROR:", e);

@@ -42,6 +42,9 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
     const [isVisible, setIsVisible] = useState(true);
     const isDone = quest.status === "done";
 
+    // DEBUG: Check what the server is sending us on re-render
+    console.log(`[QuestItem] Render ${quest.id}: ${quest.status} (Visible: ${isVisible})`);
+
     // Find children
     const children = allQuests.filter(q => q.parentId === quest.id);
 
@@ -130,6 +133,8 @@ export function QuestItem({ quest, allQuests = [], depth = 0, showCombat = false
                 }
 
                 // Force a router refresh to ensure list is updated
+                // Small delay to allow DB propagation before refresh
+                await new Promise(resolve => setTimeout(resolve, 300));
                 router.refresh();
             } catch (error) {
                 console.error("Quest toggle failed:", error);
