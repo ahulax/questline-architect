@@ -1,13 +1,21 @@
 import { users, seasons, questlines, quests, dailyLogs } from "../src/db/schema";
 import { v4 as uuidv4 } from "uuid";
 import bcrypt from "bcryptjs";
-import path from "path";
-import { drizzle } from "drizzle-orm/better-sqlite3";
-const Database = require("better-sqlite3");
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
+import * as dotenv from "dotenv";
 
-const dbPath = path.join(process.cwd(), "sqlite.db");
-const sqlite = new Database(dbPath);
-const db = drizzle(sqlite);
+dotenv.config({ path: ".env.local" });
+
+const connectionString = process.env.DATABASE_URL;
+
+if (!connectionString) {
+    console.error("❌ DATABASE_URL is not defined.");
+    process.exit(1);
+}
+
+const client = postgres(connectionString);
+const db = drizzle(client);
 
 async function main() {
     console.log("🌱 Seeding database...");
@@ -32,8 +40,8 @@ async function main() {
         userId: userId,
         title: "Season of Foundations",
         description: "Launch the MVP of Questline Architect",
-        startDate: new Date().toISOString(),
-        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // +30 days
+        startDate: new Date(),
+        endDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000), // +30 days
         status: "active",
         bossType: "Chaos",
         bossHpMax: 100,
@@ -63,8 +71,8 @@ async function main() {
             type: "main",
             effort: "S",
             status: "done",
-            createdAt: new Date().toISOString(),
-            completedAt: new Date().toISOString(),
+            createdAt: new Date(),
+            completedAt: new Date(),
         },
         {
             id: uuidv4(),
@@ -96,6 +104,7 @@ async function main() {
     });
 
     console.log("✅ Seeding complete.");
+    process.exit(0);
 }
 
 main().catch((err) => {
